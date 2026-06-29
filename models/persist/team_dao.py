@@ -1,7 +1,7 @@
 from models.persist.operacoes_dao import OperacoesDAO
 from models.persist.conexao_bd import conexao
 from typing import Any
-from team import Team
+from models.team import Team
 
 class TeamDAO(OperacoesDAO):
     def __init__(self):
@@ -63,4 +63,4 @@ class TeamDAO(OperacoesDAO):
             return team
         except Exception as e:
             print(f"Erro ao deletar: {e}")
-            return False
+            return None

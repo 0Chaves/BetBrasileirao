@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 @dataclass(slots=True)
 class Team:
-    id: int
     nome: str
     bandeira: str
     sigla: str
@@ -10,3 +9,4 @@ class Team:
     vitorias: int = 0
     derrotas: int = 0
     empates: int = 0
+    id: int = None

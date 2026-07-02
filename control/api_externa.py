@@ -9,7 +9,8 @@ def sincronizar_times():
 
     times = response.get("teams", [])
     times = sorted(times, key=lambda x: int(x['id']))
-
+    total = len(times)
+    print(total)
     print(type(times))
 
     for time in times:
@@ -18,7 +19,8 @@ def sincronizar_times():
         sigla = time.get("fifa_code")
         grupo = time.get("groups")
         id = time.get("id")
-        team = Team(id, nome, bandeira, sigla, grupo)
+        # print(nome, bandeira, sigla, grupo)
+        team = Team(nome=nome, bandeira=bandeira, sigla=sigla, grupo=grupo)
         teamDao.inserir(team)
         print(f"Time: {nome} Salvo com sucesso.")
 

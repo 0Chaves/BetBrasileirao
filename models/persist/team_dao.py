@@ -11,8 +11,8 @@ class TeamDAO(OperacoesDAO):
 
     def inserir(self, objeto: Any) -> bool:
         """Insere um novo registo na base de dados. Retorna True se tiver sucesso."""
-        sql = "INSERT INTO times (nome, vitorias, derrotas, empates) VALUES (%s, %s, %s, %s)"
-        valores = (objeto.nome, objeto.vitorias, objeto.derrotas, objeto.empates)
+        sql = "INSERT INTO times (nome, bandeira, sigla, grupo, vitorias, derrotas, empates) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        valores = (objeto.nome, objeto.bandeira, objeto.sigla, objeto.grupo, objeto.vitorias, objeto.derrotas, objeto.empates)
         lista_valores = [valores]
         try:
             #TODO: Corrigir retorno de id

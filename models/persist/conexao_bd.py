@@ -56,6 +56,9 @@ class ConexaoBD:
             CREATE TABLE times (
                 id SERIAL PRIMARY KEY,
                 nome VARCHAR(255) NOT NULL,
+                bandeira VARCHAR(255) NOT NULL,
+                sigla VARCHAR(4) NOT NULL,
+                grupo CHAR NOT NULL,
                 vitorias INTEGER NOT NULL,
                 derrotas INTEGER NOT NULL,
                 empates INTEGER NOT NULL

@@ -2,14 +2,6 @@ from sqlalchemy import String, Text, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from database import Base
 
-class Projeto(Base):
-    __tablename__ = "projetos"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    nome: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
-    descricao: Mapped[str | None] = mapped_column(Text, nullable=True)
-    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
-
 class Team(Base):
     __tablename__ = "times"
 

@@ -4,6 +4,7 @@ import models
 import schemas
 import crud
 from database import SessionLocal, engine
+from pydantic import BaseModel
 
 # Cria as tabelas na inicialização
 models.Base.metadata.create_all(bind=engine)

@@ -2,13 +2,13 @@ from pydantic import BaseModel, ConfigDict
 
 # Atributos compartilhados tanto na criação quanto na visualização
 class TeamBase(BaseModel):
-    nome: str
-    bandeira: str
-    sigla: str
-    grupo: str
-    vitorias: int = 0
-    derrotas: int = 0
-    empates: int = 0
+    name: str
+    flag: str
+    code: str
+    group: str
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
     
 # Schema para validação ao CRIAR um projeto (entrada do POST)
 class TeamCreate(TeamBase):

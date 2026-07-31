@@ -63,7 +63,7 @@ class Game(Base):
     teamB_goals: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # 5. BETS
-    bets: Mapped[list["Bet"]] = relationship(back_populates="game", foreign_keys="[game_id]")
+    bets: Mapped[list["Bet"]] = relationship(back_populates="game", foreign_keys="[Bet.game_id]")
 
 class Bet(Base):
     __tablename__ = "bets"
@@ -78,4 +78,4 @@ class Bet(Base):
     user: Mapped["User"] = relationship(back_populates="bets", foreign_keys=[user_id])
 
     game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), nullable=False)
-    game: Mapped["Game"] = relationship(back_populates="games", foreign_keys=[game_id])
+    game: Mapped["Game"] = relationship(back_populates="bets", foreign_keys=[game_id])

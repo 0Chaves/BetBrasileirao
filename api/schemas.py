@@ -1,3 +1,4 @@
+#TODO: revisar validações
 from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
 import re

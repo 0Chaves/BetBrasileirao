@@ -1,15 +1,15 @@
 from sqlalchemy.orm import Session
-import models
-import schemas
+from models.team_model import Team
+import schemas.team_schema as schema
 
 def get_team(db: Session, team_id: int):
-    return db.query(models.Team).filter(models.Team.id == team_id).first()
+    return db.query(Team).filter(Team.id == team_id).first()
 
 def get_teams(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Team).offset(skip).limit(limit).all()
+    return db.query(Team).offset(skip).limit(limit).all()
 
-def create_team(db: Session, team: schemas.TeamCreate):
-    db_team = models.Team(
+def create_team(db: Session, team: schema.TeamCreate):
+    db_team = Team(
         nome=team.nome,
         bandeira = team.bandeira,
         sigla = team.sigla,
@@ -23,7 +23,7 @@ def create_team(db: Session, team: schemas.TeamCreate):
     db.refresh(db_team)  # Atualiza o objeto com o ID gerado pelo banco
     return db_team
 
-def update_team(db: Session, team_id: int, team_update: schemas.TeamUpdate):
+def update_team(db: Session, team_id: int, team_update: schema.TeamUpdate):
     db_team = get_team(db, team_id)
     if not db_team:
         return None

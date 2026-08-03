@@ -15,11 +15,11 @@ class TeamBase(BaseModel):
     losses: int = 0
     draws: int = 0
     
-# Schema para validação ao CRIAR um projeto (entrada do POST)
+# Schema para validação ao CRIAR (entrada do POST)
 class TeamCreate(TeamBase):
     pass
 
-# Schema para validação ao ATUALIZAR um projeto (entrada do PUT)
+# Schema para validação ao ATUALIZAR (entrada do PUT)
 class TeamUpdate(BaseModel):
     nome: str | None = None
     bandeira: str | None = None
@@ -40,7 +40,7 @@ class GameSummary(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
-# Schema para RETORNAR um projeto (saída das rotas)
+# Schema para RETORNAR (saída das rotas)
 class TeamResponse(TeamBase):
     id: int
 

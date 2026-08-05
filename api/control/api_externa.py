@@ -4,6 +4,17 @@ from models.persist.team_dao import TeamDAO
 
 teamDao = TeamDAO()
 
+url = "https://api.football-data.org/v4/competitions/BSA/standings"
+
+payload={}
+headers = {
+  'X-Auth-Token': 'a7a49ca8c1374bd9865710b3d6da0329',
+}
+
+response = requests.request("GET", url, headers=headers, data=payload).json()
+
+print(response)
+
 def sincronizar_times():
     response = requests.get("https://worldcup26.ir/get/teams").json()
 

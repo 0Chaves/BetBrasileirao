@@ -1,3 +1,4 @@
+# TODO: trocar prediction pelo id do time no jogo; criar enum para status;
 from decimal import Decimal
 from sqlalchemy import String, Numeric, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship  
@@ -9,7 +10,7 @@ class Bet(Base):
     id: Mapped[int] = mapped_column(primary_key = True, index = True)
     points: Mapped[Decimal] = mapped_column(Numeric(10,2), nullable=False)
     prediction: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(255), nullable=False) #em andamento, finalizada
+    status: Mapped[str] = mapped_column(String(255), nullable=False, default="em_andamento") #em andamento, finalizada
     multiplier: Mapped[Decimal] = mapped_column(Numeric(10,2), nullable=False)
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)

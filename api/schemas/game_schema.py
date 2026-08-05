@@ -1,8 +1,7 @@
 #TODO: revisar validações
 from pydantic import BaseModel, ConfigDict, field_validator
-from datetime import date
-import re
 from decimal import Decimal
+from schemas.team_schema import TeamResponse
 
 class GameBase(BaseModel):
     status: str
@@ -20,6 +19,14 @@ class GameUpdate(BaseModel):
     teamA_goals: int | None = None
     teamB_goals: int | None = None
     winner_id: int | None = None
+
+class BetSummary(BaseModel):
+    id: int
+    points: Decimal
+    prediction: str
+    status: str
+    multiplier: Decimal
+    user_id: int
 
 # Na resposta, podemos aninhar os Schemas de Time para devolver os dados completos!
 class GameResponse(GameBase):

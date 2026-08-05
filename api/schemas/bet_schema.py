@@ -1,7 +1,5 @@
 #TODO: revisar validações
 from pydantic import BaseModel, ConfigDict, field_validator
-from datetime import date
-import re
 from decimal import Decimal
 
 class BetBase(BaseModel):
@@ -9,6 +7,13 @@ class BetBase(BaseModel):
     prediction: str
     status: str
     multiplier: Decimal
+
+    @field_validator('points')
+    @classmethod
+    def verify_points(cls, p: int):
+        if p <= 0:
+            raise ValueError ("Os pontos devem ser positivos")
+        return p
 
 class BetCreate(BetBase):
     pass

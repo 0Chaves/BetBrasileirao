@@ -15,7 +15,7 @@ class User(Base):
     cpf: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     birthDate: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     login: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
-    senha: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     points: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("1000.00"))
     max_points: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("1000.00"))
     right_calls: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -21,13 +21,13 @@ class TeamCreate(TeamBase):
 
 # Schema para validação ao ATUALIZAR (entrada do PUT)
 class TeamUpdate(BaseModel):
-    nome: str | None = None
-    bandeira: str | None = None
-    sigla: str | None = None
-    grupo: str | None = None
-    vitorias: int | None = None
-    derrotas: int | None = None
-    empates: int | None = None
+    name: str | None = None
+    flag: str | None = None
+    code: str | None = None
+    group: str | None = None
+    wins: int | None = None
+    losses: int | None = None
+    draws: int | None = None
 
 # Necessario para evitar looping infinito no json
 class GameSummary(BaseModel):

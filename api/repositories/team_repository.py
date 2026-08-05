@@ -9,15 +9,7 @@ def get_teams(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Team).offset(skip).limit(limit).all()
 
 def create_team(db: Session, team: schema.TeamCreate):
-    db_team = Team(
-        nome=team.nome,
-        bandeira = team.bandeira,
-        sigla = team.sigla,
-        grupo = team.grupo,
-        vitorias = team.vitorias,
-        derrotas = team.derrotas,
-        empates = team.empates,
-    )
+    db_team = Team(**team.model_dump())
     db.add(db_team)
     db.commit()
     db.refresh(db_team)  # Atualiza o objeto com o ID gerado pelo banco
@@ -28,7 +20,7 @@ def update_team(db: Session, team_id: int, team_update: schema.TeamUpdate):
     if not db_team:
         return None
     
-    # Extrai os dados enviados e atualiza apenas os campos fornecidos
+    # Extrai os dados enviados e atualiza apenas os campos fornecidos (o model_dump traz um dicionario com os atributos)
     update_data = team_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_team, key, value)

@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
 import re
 from decimal import Decimal
+from schemas.game_schema import GameResponse
 
 class UserBase(BaseModel):
     name: str
@@ -33,12 +34,12 @@ class UserBase(BaseModel):
 
 # Como a senha não está no UserBase, ela não vai vazar nos outros endpoints
 class UserCreate(UserBase):
-    senha: str
+    password: str
 
 class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
-    senha: str | None = None
+    password: str | None = None
     # TODO: colocar os outros atributos
     
 class UserBetSummary(BaseModel):
@@ -49,13 +50,6 @@ class UserBetSummary(BaseModel):
     multiplier: Decimal
     user_id: int
     game: GameResponse
-class BetSummary(BaseModel):
-    id: int
-    points: Decimal
-    prediction: str
-    status: str
-    multiplier: Decimal
-    user_id: int
 
 # No Response, tiramos a senha, mas adicionamos os dados gerados pelo sistema
 class UserResponse(UserBase):

@@ -16,7 +16,8 @@ class BetBase(BaseModel):
         return p
 
 class BetCreate(BetBase):
-    pass
+    user_id: int
+    game_id: int
 
 class BetUpdate(BaseModel):
     points: Decimal | None = None

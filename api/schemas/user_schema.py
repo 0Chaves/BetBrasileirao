@@ -8,19 +8,8 @@ from schemas.game_schema import GameResponse
 class UserBase(BaseModel):
     name: str
     email: str
-    cpf: str
     birthDate: date
     login: str
-    
-    @field_validator('cpf')
-    @classmethod
-    def validar_cpf(cls, v: str):
-        # Remove pontos e traços
-        cpf_limpo = re.sub(r'[^0-9]', '', v)
-        if len(cpf_limpo) != 11:
-            # Se disparar um ValueError, o FastAPI automaticamente bloqueia a requisição e retorna erro para o cliente
-            raise ValueError("O CPF deve conter exatamente 11 dígitos numéricos.")
-        return cpf_limpo
 
     @field_validator('birthDate')
     @classmethod
@@ -34,7 +23,18 @@ class UserBase(BaseModel):
 
 # Como a senha não está no UserBase, ela não vai vazar nos outros endpoints
 class UserCreate(UserBase):
+    cpf: str
     password: str
+
+    @field_validator('cpf')
+    @classmethod
+    def validar_cpf(cls, v: str):
+        # Remove pontos e traços
+        cpf_limpo = re.sub(r'[^0-9]', '', v)
+        if len(cpf_limpo) != 11:
+            # Se disparar um ValueError, o FastAPI automaticamente bloqueia a requisição e retorna erro para o cliente
+            raise ValueError("O CPF deve conter exatamente 11 dígitos numéricos.")
+        return cpf_limpo
 
 class UserUpdate(BaseModel):
     name: str | None = None

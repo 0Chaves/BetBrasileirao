@@ -1,6 +1,4 @@
 from sqlalchemy.orm import Session
-from models.bet_model import Bet
-import schemas.bet_schema as schema
 from typing import Any, Generic, Type, TypeVar
 from pydantic import BaseModel
 from database import Base
@@ -30,7 +28,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_object)  # Atualiza o objeto com o ID gerado pelo banco
         return db_object
 
-    def update_bet(self, db: Session, id: Any, obj_update: UpdateSchemaType) -> ModelType | None:
+    def update(self, db: Session, id: Any, obj_update: UpdateSchemaType) -> ModelType | None:
         db_object = self.findById(db, id)
         if not db_object:
             return None

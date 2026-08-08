@@ -49,7 +49,34 @@ class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
     password: str | None = None
-    # TODO: colocar os outros atributos
+    birthDate: date | None = None
+    cpf: str | None = None
+    login: str | None = None
+
+    @field_validator('cpf')
+    @classmethod
+    def validar_cpf(cls, v: str):
+        if v == None:
+            return
+        
+        cpf_limpo = re.sub(r'[^0-9]', '', v)
+        if len(cpf_limpo) != 11:
+            # Se disparar um ValueError, o FastAPI automaticamente bloqueia a requisição e retorna erro para o cliente
+            raise ValueError("O CPF deve conter exatamente 11 dígitos numéricos.")
+        return cpf_limpo
+
+    @field_validator('password')
+    @classmethod
+    def validar_senha(cls, v: str):
+        if v == None:
+            return
+        
+        padrao = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+        
+        if not re.match(padrao, v):
+            raise ValueError("A senha deve ter no mínimo 8 caracteres, contendo pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial.")
+        return v
+    
     
 class UserBetSummary(BaseModel):
     id: int

@@ -36,6 +36,15 @@ class UserCreate(UserBase):
             raise ValueError("O CPF deve conter exatamente 11 dígitos numéricos.")
         return cpf_limpo
 
+    @field_validator('password')
+    @classmethod
+    def validar_senha(cls, v: str):
+        padrao = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+        
+        if not re.match(padrao, v):
+            raise ValueError("A senha deve ter no mínimo 8 caracteres, contendo pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial.")
+        return v
+
 class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None

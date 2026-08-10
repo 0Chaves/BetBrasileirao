@@ -18,5 +18,5 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     points: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("100.00"))
     max_points: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("100.00"))
-    right_calls: Mapped[int] = mapped_column(Integer, nullable=False)
+    right_calls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     bets: Mapped[list["Bet"]] = relationship(back_populates="user", foreign_keys="[Bet.user_id]")

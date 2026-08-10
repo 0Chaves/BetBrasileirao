@@ -1,4 +1,4 @@
-#TODO: revisar validações
+# TODO: verificar se ja existe o login antes de atualizar ou criar
 from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
 import re
@@ -76,7 +76,6 @@ class UserUpdate(BaseModel):
         if not re.match(padrao, v):
             raise ValueError("A senha deve ter no mínimo 8 caracteres, contendo pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial.")
         return v
-    
     
 class UserBetSummary(BaseModel):
     id: int

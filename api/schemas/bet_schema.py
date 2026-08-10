@@ -5,18 +5,16 @@ from decimal import Decimal
 class BetBase(BaseModel):
     points: Decimal
     prediction: str
-    status: str
     multiplier: Decimal
 
     @field_validator('points')
     @classmethod
-    def verify_points(cls, p: int):
+    def verify_points(cls, p: Decimal):
         if p <= 0:
-            raise ValueError ("Os pontos devem ser positivos")
+            raise ValueError("Os pontos devem ser positivos")
         return p
 
 class BetCreate(BetBase):
-    user_id: int
     game_id: int
 
 class BetUpdate(BaseModel):
@@ -27,6 +25,7 @@ class BetUpdate(BaseModel):
 
 class BetResponse(BetBase):
     id: int
+    status: str
     user_id: int
     game_id: int
 

@@ -6,10 +6,12 @@ class TeamBase(BaseModel):
     name: str
     flag: str
     code: str
-    group: str
-    wins: int = 0
-    losses: int = 0
-    draws: int = 0
+    position: int
+    playedGames: int
+    won: int
+    lost: int
+    draw: int
+    points: int
     
 # Schema para validação ao CRIAR (entrada do POST)
 class TeamCreate(TeamBase):
@@ -20,10 +22,12 @@ class TeamUpdate(BaseModel):
     name: str | None = None
     flag: str | None = None
     code: str | None = None
-    group: str | None = None
-    wins: int | None = None
-    losses: int | None = None
-    draws: int | None = None
+    position: int | None = None
+    playedGames: int | None = None
+    won: int | None = None
+    lost: int | None = None
+    draw: int | None = None
+    points: int | None = None
 
 # Necessario para evitar looping infinito no json
 class GameSummary(BaseModel):

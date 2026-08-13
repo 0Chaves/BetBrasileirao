@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 # Atributos compartilhados tanto na criação quanto na visualização
 class TeamBase(BaseModel):
+    id: int
     name: str
     flag: str
     code: str
@@ -33,19 +34,17 @@ class TeamUpdate(BaseModel):
 class GameSummary(BaseModel):
     id: int
     status: str
-    teamA_id: int
-    teamB_id: int
-    teamA_goals: int
-    teamB_goals: int
+    home_team_id: int
+    away_team_id: int
+    home_team_goals: int
+    away_team_goals: int
     
     model_config = ConfigDict(from_attributes=True)
 
 # Schema para RETORNAR (saída das rotas)
 class TeamResponse(TeamBase):
-    id: int
-
     # O SQLAlchemy preenche essas listas automaticamente através dos 'relationships'
-    games_as_team_a: list[GameSummary] = []
-    games_as_team_b: list[GameSummary] = []
+    games_as_home_team: list[GameSummary] = []
+    games_as_away_team: list[GameSummary] = []
     won_games: list[GameSummary] = []
     model_config = ConfigDict(from_attributes=True)

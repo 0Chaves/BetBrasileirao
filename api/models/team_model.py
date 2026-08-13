@@ -16,6 +16,6 @@ class Team(Base):
     draw: Mapped[int] = mapped_column(Integer)
     points: Mapped[int] = mapped_column(Integer)
     
-    games_as_team_a: Mapped[list["Game"]] = relationship(back_populates="teamA", foreign_keys="[Game.teamA_id]")
-    games_as_team_b: Mapped[list["Game"]] = relationship(back_populates="teamB", foreign_keys="[Game.teamB_id]")
+    games_as_home_team: Mapped[list["Game"]] = relationship(back_populates="home_team", foreign_keys="[Game.home_team_id]")
+    games_as_away_team: Mapped[list["Game"]] = relationship(back_populates="away_team", foreign_keys="[Game.away_team_id]")
     won_games: Mapped[list["Game"]] = relationship(back_populates="winner", foreign_keys="[Game.winner_id]")

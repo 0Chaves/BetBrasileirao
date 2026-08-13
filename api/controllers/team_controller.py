@@ -27,6 +27,13 @@ def obter_team(team_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Time não encontrado")
     return db_team
 
+@router.get("/name/{name}", response_model=schema.TeamResponse, status_code=status.HTTP_200_OK)
+def getByName(name: str, db: Session = Depends(get_db)):
+    db_team = team_repository.findByName(db=db, name=name)
+    if db_team is None:
+        raise HTTPException(status_code=404, detail="Time não encontrado")
+    return db_team
+
 @router.put("/{team_id}", response_model=schema.TeamResponse, status_code=status.HTTP_200_OK)
 def atualizar_team(team_id: int, team_update: schema.TeamUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)):
     db_team = team_repository.update(db=db, id=team_id, obj_update=team_update)

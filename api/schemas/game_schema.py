@@ -2,23 +2,28 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from decimal import Decimal
 from schemas.team_schema import TeamResponse
+from datetime import date
 
 class GameBase(BaseModel):
+    id: int
     status: str
-    home_team_goals: int = 0
-    away_team_goals: int = 0
+    date: date
+    home_team_goals: int | None
+    away_team_goals: int | None
+    winner_str: str | None
 
 # Na criação, o cliente envia apenas as chaves estrangeiras
 class GameCreate(GameBase):
     home_team_id: int
     away_team_id: int
-    # winner_id não é enviado na criação, pois o jogo acabou de ser marcado
+    winner_id: int | None
 
 class GameUpdate(BaseModel):
     status: str | None = None
     home_team_goals: int | None = None
     away_team_goals: int | None = None
     winner_id: int | None = None
+    winner_str: str | None = None
 
 class BetSummary(BaseModel):
     id: int
@@ -30,7 +35,6 @@ class BetSummary(BaseModel):
 
 # Na resposta, podemos aninhar os Schemas de Time para devolver os dados completos!
 class GameResponse(GameBase):
-    id: int
     winner_id: int | None = None
     
     # Ao incluir os schemas aqui, o FastAPI pede para o SQLAlchemy:

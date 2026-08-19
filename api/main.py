@@ -26,7 +26,3 @@ app.include_router(team_controller.router)
 app.include_router(user_controller.router)
 app.include_router(game_controller.router)
 app.include_router(bet_controller.router)
-
-@app.get("/")
-def read_root():
-    return {"Hello": "Bem-vindo a API do Aposta Copa!"}

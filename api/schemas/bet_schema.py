@@ -5,7 +5,6 @@ from decimal import Decimal
 class BetBase(BaseModel):
     points: Decimal
     prediction: str
-    multiplier: Decimal
 
     @field_validator('points')
     @classmethod
@@ -21,11 +20,11 @@ class BetUpdate(BaseModel):
     points: Decimal | None = None
     prediction: str | None = None
     status: str | None = None
-    multiplier: Decimal | None = None
 
 class BetResponse(BetBase):
     id: int
     status: str
+    multiplier: Decimal
     user_id: int
     game_id: int
 

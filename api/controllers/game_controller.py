@@ -4,6 +4,7 @@ from core.dependencies import get_db, get_current_admin_user
 from models.user_model import User
 import schemas.game_schema as schema
 from repositories.game_repository import game_repository
+from services.game_service import GameService
 
 # Equivalente ao @RestController e @RequestMapping("/games") do Spring
 router = APIRouter(
@@ -34,6 +35,10 @@ def atualizar_game(game_id: int, game_update: schema.GameUpdate, db: Session = D
     db_game = game_repository.update(db=db, id=game_id, obj_update=game_update)
     if db_game is None:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
+
+    if game_update.status == "FINISHED":
+        db_game = GameService(db).finalize_game(game_id)
+
     return db_game
 
 @router.delete("/{game_id}", status_code=status.HTTP_200_OK)

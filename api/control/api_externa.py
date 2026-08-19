@@ -40,6 +40,7 @@ def save_team(team):
     post_response = requests.post("http://localhost:8000/teams", json=payload, headers=headers)
 
     print({post_response.status_code})
+    return post_response.status_code
 
 def sync_teams_paralelo():
     teams = standings_response["standings"][0]["table"]
@@ -112,6 +113,7 @@ def save_match(match):
     if post_response.status_code == 422:
         print("Erro no seguinte jogo:")
         print(payload)
+    return post_response.status_code
 
 def sync_matches_paralelo():
     matches = matches_response["matches"]

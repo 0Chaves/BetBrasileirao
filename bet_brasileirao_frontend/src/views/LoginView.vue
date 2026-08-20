@@ -40,7 +40,7 @@ async function handleSubmit() {
           >
             sports_soccer
           </span>
-          <h1 class="font-headline-md text-headline-md font-bold text-primary">Aposta Copa</h1>
+          <h1 class="font-headline-md text-headline-md font-bold text-primary">Bet Brasileirão</h1>
         </div>
       </div>
     </header>

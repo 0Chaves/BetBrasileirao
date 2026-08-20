@@ -35,7 +35,7 @@ function logout() {
   >
     <div class="flex items-center gap-lg">
       <h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">
-        Aposta Copa
+        Bet Brasileirão
       </h1>
       <nav class="hidden md:flex items-center gap-lg ml-xl">
         <router-link

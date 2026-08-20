@@ -18,7 +18,7 @@ matches_response = requests.request("GET", url_matches, headers=headers, data=pa
 def create_admin():
     pass
 
-admin_auth = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzg3MjkzMDI0LCJpc0FkbWluIjp0cnVlfQ.oTKMUQYmh4M179NOw-PDpLhLYY9V-Gxd7x_lDkEbzTI"
+admin_auth = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzg3MzE2Mjk4LCJpc0FkbWluIjp0cnVlfQ.Mt0R08c1Z3MBBB2FA_xyWaN2eI-8IOw8rClR85uwrt4 "
 
 def save_team(team): 
     payload = {

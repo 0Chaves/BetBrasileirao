@@ -6,7 +6,7 @@ import { extractErrorMessage } from '@/utils/errors'
 export const useGamesStore = defineStore('games', {
   state: () => ({
     games: [],
-    activeFilter: 'upcoming', // 'live' | 'upcoming' | 'finished'
+    activeFilter: 'upcoming',
     loading: false,
     error: null
   }),
@@ -31,7 +31,7 @@ export const useGamesStore = defineStore('games', {
       this.loading = true
       this.error = null
       try {
-        this.games = await gameService.list({ limit: 100 })
+        this.games = await gameService.list({ limit: 400 })
       } catch (err) {
         this.error = extractErrorMessage(err, 'Não foi possível carregar os jogos.')
         this.games = []

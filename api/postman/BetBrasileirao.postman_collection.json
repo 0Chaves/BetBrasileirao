@@ -2,15 +2,15 @@
   "info": {
     "name": "BetBrasileirão - Testes ",
     "_postman_id": "b3a1d6a0-8f9b-4e58-9d9c-betbrasileirao01",
-    "description": "Bateria de testes ponta-a-ponta cobrindo o fluxo: cadastro/login/troca de senha de usuários, criação e encerramento de uma partida pelo administrador, apostas de dois usuários, apuração de pontos e casos negativos (cancelamento de aposta e exclusão de conta).\n\nPRÉ-REQUISITOS:\n1. API rodando em {{base_url}} (default http://localhost:8000).\n2. Deve existir no banco pelo menos 2 times (Team) cadastrados, com IDs preenchidos em team_home_id/team_away_id (default 1 e 2). Use o script de povoamento do banco (ver histórico do repo) ou o folder 'Setup' para conferir.\n3. Deve existir um usuário administrador (isAdmin=true) já cadastrado no banco. NÃO existe endpoint público para promover um usuário a admin, então ele precisa ser criado/promovido direto no banco antes de rodar esta collection. Preencha admin_login/admin_password nas variáveis da collection.\n4. Rode os folders NA ORDEM (Postman Collection Runner) — cada request salva variáveis (tokens e IDs) usadas pelos requests seguintes.\n\nGAPS/ADAPTAÇÕES ENCONTRADOS NA API ATUAL (documentados também nas descrições dos requests correspondentes):\n- Não existe endpoint de logout (JWT é stateless) — simulado descartando a variável de token.\n- 'HA4 - Administrador cria uma aposta' foi interpretado como o admin cadastrando uma PARTIDA (jogo/mercado de apostas), já que apostar em si (POST /bets) só pode ser feito em nome do usuário autenticado.\n- 'HU7 - vê resultados de uma seleção' foi mapeado para GET /teams/{id}, já que a API modela 'Team' (clube do Brasileirão), não seleção nacional.\n- 'HU8 - vê apostas ativas' foi mapeado para GET /games (não existe filtro de status ainda; o cliente precisa filtrar partidas com status != FINISHED).\n- 'HU4 - Multiplica a aposta' não tem endpoint próprio: o multiplicador é calculado automaticamente pelo backend no momento em que a aposta é criada (POST /bets). O request desse bloco reconsulta a aposta só para evidenciar o campo 'multiplier'.\n- 'Usuário2 cancela participação nas apostas': DELETE /bets/{id} hoje só é permitido para admin (get_current_admin_user). O request com o token do próprio usuário é incluído propositalmente para evidenciar o 403 — e há um segundo request cancelando via admin para não travar o restante do fluxo.\n- 'Usuário2 tenta logar e não consegue': o admin desativa a conta via PATCH /users/{id}/deactivate (isActive=false) como pré-condição, e o login final deve retornar 403 'Esta conta está desativada'.\n- GET /users (HA1) hoje não exige privilégio de admin (só usuário autenticado) — vale reportar como possível ajuste de autorização.",
+    "description": "Bateria de testes ponta-a-ponta cobrindo o fluxo: cadastro/login/troca de senha de usuários, criação e encerramento de uma partida pelo administrador, apostas de dois usuários, apuração de pontos e casos negativos (cancelamento de aposta e exclusão de conta).\n\nPRÉ-REQUISITOS:\n1. API rodando em {{base_url}} (default http://localhost:8000).\n2. Deve existir no banco pelo menos 2 times (Team) cadastrados, com IDs preenchidos em team_home_id/team_away_id (default 1 e 2). Use o script de povoamento do banco (ver histórico do repo) ou o folder 'Setup' para conferir.\n3. Deve existir um usuário administrador (isAdmin=true) já cadastrado no banco. NÃO existe endpoint público para promover um usuário a admin, então ele precisa ser criado/promovido direto no banco antes de rodar esta collection. Preencha admin_login/admin_password nas variáveis da collection.\n4. Rode os folders NA ORDEM (Postman Collection Runner) — cada request salva variáveis (tokens e IDs) usadas pelos requests seguintes.\n\nGAPS/ADAPTAÇÕES ENCONTRADOS NA API ATUAL (documentados também nas descrições dos requests correspondentes):\n- Não existe endpoint de logout (JWT é stateless) — simulado descartando a variável de token.\n- 'HA4 - Administrador cria uma aposta' foi interpretado como o admin cadastrando uma PARTIDA (jogo/mercado de apostas), já que apostar em si (POST /bets) só pode ser feito em nome do usuário autenticado.\n- 'HU7 - vê resultados de uma seleção' foi mapeado para GET /teams/{id}, já que a API modela 'Team' (clube do Brasileirão), não seleção nacional.\n- 'HU8 - vê apostas ativas' foi mapeado para GET /games (não existe filtro de status ainda; o cliente precisa filtrar partidas com status != FINISHED).\n- 'HU4 - Multiplica a aposta' não tem endpoint próprio: o multiplicador é calculado automaticamente pelo backend no momento em que a aposta é criada (POST /bets). O request desse bloco reconsulta a aposta só para evidenciar o campo 'multiplier'.\n- 'Usuário2 cancela participação nas apostas': DELETE /bets/{id} hoje só é permitido para admin (get_current_admin_user). O request com o token do próprio usuário é incluído propositalmente para evidenciar o 403 — e há um segundo request cancelando via admin para não travar o restante do fluxo.\n- 'Usuário2 tenta logar e não consegue': o admin desativa a conta via PATCH /users/{id}/deactivate (isActive=false) como pré-condição, e o login final deve retornar 403 'Esta conta está desativada'.\n- GET /users (HA1) hoje não exige privilégio de admin (só usuário autenticado) — possível ajuste de autorização.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "base_url", "value": "http://localhost:8000" },
     { "key": "admin_login", "value": "admin" },
     { "key": "admin_password", "value": "Senha123@" },
-    { "key": "team_home_id", "value": "1" },
-    { "key": "team_away_id", "value": "2" },
+    { "key": "team_home_id", "value": "1770" },
+    { "key": "team_away_id", "value": "1782" },
     { "key": "new_game_id", "value": "20" },
     { "key": "token_user1", "value": "" },
     { "key": "token_user2", "value": "" },
@@ -111,7 +111,7 @@
       ]
     },
     {
-      "name": "2 - Administrador: cria e consulta a partida (aposta)",
+      "name": "2 - Administrador: cria e consulta a partida",
       "item": [
         {
           "name": "Login Administrador",
@@ -138,7 +138,7 @@
           }
         },
         {
-          "name": "HA4 - Administrador cria uma aposta (partida)",
+          "name": "HA4 - Administrador cria uma partida",
           "event": [
             {
               "listen": "test",

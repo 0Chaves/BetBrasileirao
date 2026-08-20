@@ -30,6 +30,14 @@ def get_me(current_user: User = Depends(get_current_user)):
 def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return user_repository.findAll(db=db, skip=skip, limit=limit)
 
+@router.get("/ranking/points", response_model=list[schema.UserRanking])
+def ranking_por_pontos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return user_repository.find_ranking_by_points(db=db, skip=skip, limit=limit)
+
+@router.get("/ranking/right-calls", response_model=list[schema.UserRanking])
+def ranking_por_acertos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return user_repository.find_ranking_by_right_calls(db=db, skip=skip, limit=limit)
+
 @router.get("/{user_id}", response_model=schema.UserResponse, status_code=status.HTTP_200_OK)
 def get_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.id != user_id and not current_user.isAdmin:
@@ -49,6 +57,13 @@ def update_user(user_id: int, user_update: schema.UserUpdate, db: Session = Depe
         user_update.password = hash_password(user_update.password)
 
     db_user = user_repository.update(db=db, id=user_id, obj_update=user_update)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="Usuario não encontrado")
+    return db_user
+
+@router.patch("/{user_id}/deactivate", response_model=schema.UserResponse, status_code=status.HTTP_200_OK)
+def deactivate_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)):
+    db_user = user_repository.deactivate_user(db=db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="Usuario não encontrado")
     return db_user

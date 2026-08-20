@@ -25,6 +25,34 @@ class UserRepository(BaseRepository[User, schema.UserCreate, schema.UserUpdate])
             .first()
         )
     
+    def find_ranking_by_points(self, db: Session, skip: int = 0, limit: int = 100) -> list[User]:
+        return (
+            db.query(User)
+            .order_by(User.points.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def find_ranking_by_right_calls(self, db: Session, skip: int = 0, limit: int = 100) -> list[User]:
+        return (
+            db.query(User)
+            .order_by(User.right_calls.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def deactivate_user(self, db: Session, user_id: int) -> User | None:
+        db_user = self.findById(db, user_id)
+        if not db_user:
+            return None
+
+        db_user.isActive = False
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+
     def atualizar_pontos_usuario(self, db: Session, user_id: int, pontos_para_adicionar: Decimal) -> User | None:
         db_user = self.findById(db, user_id)
         if not db_user:

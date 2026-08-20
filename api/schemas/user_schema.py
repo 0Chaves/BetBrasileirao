@@ -77,6 +77,14 @@ class UserUpdate(BaseModel):
             raise ValueError("A senha deve ter no mínimo 8 caracteres, contendo pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial.")
         return v
     
+class UserRanking(BaseModel):
+    name: str
+    points: float
+    max_points: float
+    right_calls: int
+
+    model_config = ConfigDict(from_attributes=True)
+
 class UserBetSummary(BaseModel):
     id: int
     points: Decimal

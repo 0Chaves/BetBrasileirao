@@ -1,0 +1,740 @@
+{
+  "info": {
+    "name": "BetBrasileirão - Testes ",
+    "_postman_id": "b3a1d6a0-8f9b-4e58-9d9c-betbrasileirao01",
+    "description": "Bateria de testes ponta-a-ponta cobrindo o fluxo: cadastro/login/troca de senha de usuários, criação e encerramento de uma partida pelo administrador, apostas de dois usuários, apuração de pontos e casos negativos (cancelamento de aposta e exclusão de conta).\n\nPRÉ-REQUISITOS:\n1. API rodando em {{base_url}} (default http://localhost:8000).\n2. Deve existir no banco pelo menos 2 times (Team) cadastrados, com IDs preenchidos em team_home_id/team_away_id (default 1 e 2). Use o script de povoamento do banco (ver histórico do repo) ou o folder 'Setup' para conferir.\n3. Deve existir um usuário administrador (isAdmin=true) já cadastrado no banco. NÃO existe endpoint público para promover um usuário a admin, então ele precisa ser criado/promovido direto no banco antes de rodar esta collection. Preencha admin_login/admin_password nas variáveis da collection.\n4. Rode os folders NA ORDEM (Postman Collection Runner) — cada request salva variáveis (tokens e IDs) usadas pelos requests seguintes.\n\nGAPS/ADAPTAÇÕES ENCONTRADOS NA API ATUAL (documentados também nas descrições dos requests correspondentes):\n- Não existe endpoint de logout (JWT é stateless) — simulado descartando a variável de token.\n- 'HA4 - Administrador cria uma aposta' foi interpretado como o admin cadastrando uma PARTIDA (jogo/mercado de apostas), já que apostar em si (POST /bets) só pode ser feito em nome do usuário autenticado.\n- 'HU7 - vê resultados de uma seleção' foi mapeado para GET /teams/{id}, já que a API modela 'Team' (clube do Brasileirão), não seleção nacional.\n- 'HU8 - vê apostas ativas' foi mapeado para GET /games (não existe filtro de status ainda; o cliente precisa filtrar partidas com status != FINISHED).\n- 'HU4 - Multiplica a aposta' não tem endpoint próprio: o multiplicador é calculado automaticamente pelo backend no momento em que a aposta é criada (POST /bets). O request desse bloco reconsulta a aposta só para evidenciar o campo 'multiplier'.\n- 'Usuário2 cancela participação nas apostas': DELETE /bets/{id} hoje só é permitido para admin (get_current_admin_user). O request com o token do próprio usuário é incluído propositalmente para evidenciar o 403 — e há um segundo request cancelando via admin para não travar o restante do fluxo.\n- 'Usuário2 tenta logar e não consegue': o admin desativa a conta via PATCH /users/{id}/deactivate (isActive=false) como pré-condição, e o login final deve retornar 403 'Esta conta está desativada'.\n- GET /users (HA1) hoje não exige privilégio de admin (só usuário autenticado) — vale reportar como possível ajuste de autorização.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "admin_login", "value": "admin" },
+    { "key": "admin_password", "value": "Senha123@" },
+    { "key": "team_home_id", "value": "1" },
+    { "key": "team_away_id", "value": "2" },
+    { "key": "new_game_id", "value": "20" },
+    { "key": "token_user1", "value": "" },
+    { "key": "token_user2", "value": "" },
+    { "key": "token_admin", "value": "" },
+    { "key": "user1_id", "value": "" },
+    { "key": "user2_id", "value": "" },
+    { "key": "user1_login", "value": "usuario1" },
+    { "key": "user1_password", "value": "Senha@123" },
+    { "key": "user2_login", "value": "usuario2" },
+    { "key": "user2_password", "value": "Senha@123" },
+    { "key": "game_id", "value": "" },
+    { "key": "bet1_id", "value": "" },
+    { "key": "bet2_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1 - Usuário1: cadastro, troca de senha e logout",
+      "item": [
+        {
+          "name": "HU1 - Cadastrar Usuário1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('user1_login', 'usuario1_' + Date.now());"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "const body = pm.response.json();",
+                "pm.test('retornou id', () => pm.expect(body.id).to.be.a('number'));",
+                "pm.collectionVariables.set('user1_id', body.id);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Um Teste\",\n  \"email\": \"{{user1_login}}@example.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"login\": \"{{user1_login}}\",\n  \"cpf\": \"1{{$timestamp}}\",\n  \"password\": \"{{user1_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/users/", "host": ["{{base_url}}"], "path": ["users", ""] },
+            "description": "HU1 - Cadastro público de usuário."
+          }
+        },
+        {
+          "name": "Login Usuário1 (necessário para trocar a senha)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.collectionVariables.set('token_user1', body.access_token);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{user1_login}}\",\n  \"password\": \"{{user1_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "description": "Passo inferido (não numerado na história original), necessário porque HU6 exige um token válido do próprio usuário."
+          }
+        },
+        {
+          "name": "HU6 - Usuário1 altera senha",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_user1}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NovaSenha@456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/users/{{user1_id}}", "host": ["{{base_url}}"], "path": ["users", "{{user1_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Administrador: cria e consulta a partida (aposta)",
+      "item": [
+        {
+          "name": "Login Administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.collectionVariables.set('token_admin', body.access_token);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{admin_login}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "description": "Requer um usuário com isAdmin=true já existente no banco (ver pré-requisitos da collection)."
+          }
+        },
+        {
+          "name": "HA4 - Administrador cria uma aposta (partida)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "const body = pm.response.json();",
+                "pm.collectionVariables.set('game_id', body.id);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{new_game_id}},\n  \"status\": \"SCHEDULED\",\n  \"date\": \"2026-08-25\",\n  \"home_team_goals\": null,\n  \"away_team_goals\": null,\n  \"winner_str\": null,\n  \"home_team_id\": {{team_home_id}},\n  \"away_team_id\": {{team_away_id}},\n  \"winner_id\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/games/", "host": ["{{base_url}}"], "path": ["games", ""] },
+            "description": "Interpretação de HA4: na API, 'apostar' (POST /bets) só pode ser feito em nome do próprio usuário autenticado. O que o admin cadastra é a PARTIDA/mercado disponível para apostas. Ajuste team_home_id/team_away_id e new_game_id nas variáveis da collection para IDs válidos no seu banco."
+          }
+        },
+        {
+          "name": "HA5 - Administrador pesquisa dados da aposta criada",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_admin}}" } ],
+            "url": { "raw": "{{base_url}}/games/{{game_id}}", "host": ["{{base_url}}"], "path": ["games", "{{game_id}}"] },
+            "description": "Endpoint é público (não exige token), mas mantido com o token do admin para seguir a narrativa da história."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Usuário1: login e fluxo de aposta",
+      "item": [
+        {
+          "name": "Usuário1 loga no sistema com a nova senha",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.collectionVariables.set('token_user1', body.access_token);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{user1_login}}\",\n  \"password\": \"NovaSenha@456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "HU7 - Usuário1 vê resultados de uma seleção (time)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/teams/{{team_home_id}}", "host": ["{{base_url}}"], "path": ["teams", "{{team_home_id}}"] },
+            "description": "A API modela clubes do Brasileirão (Team), não seleções nacionais. Mapeado para o time mandante da partida criada, cujo retorno inclui os jogos/resultados (games_as_home_team, games_as_away_team, won_games)."
+          }
+        },
+        {
+          "name": "HU8 - Usuário1 vê apostas ativas",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('retorna lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/games/", "host": ["{{base_url}}"], "path": ["games", ""] },
+            "description": "Não existe filtro de status na API ainda; 'apostas ativas' = partidas retornadas com status diferente de FINISHED (filtrar no cliente)."
+          }
+        },
+        {
+          "name": "HU2 - Usuário1 registra uma aposta",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "const body = pm.response.json();",
+                "pm.test('multiplicador calculado', () => pm.expect(Number(body.multiplier)).to.not.be.NaN);",
+                "pm.collectionVariables.set('bet1_id', body.id);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_user1}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"points\": 60,\n  \"prediction\": \"HOME_TEAM\",\n  \"game_id\": {{game_id}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/bets/", "host": ["{{base_url}}"], "path": ["bets", ""] },
+            "description": "prediction usa a mesma convenção de Game.winner_str (HOME_TEAM/AWAY_TEAM/DRAW) para poder ser conferida na apuração."
+          }
+        },
+        {
+          "name": "HU3 - Usuário1 vê o status da aposta",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('status em_andamento', () => pm.expect(pm.response.json().status).to.eql('em_andamento'));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/bets/{{bet1_id}}", "host": ["{{base_url}}"], "path": ["bets", "{{bet1_id}}"] }
+          }
+        },
+        {
+          "name": "HU4 - Usuário1 'multiplica' a aposta (consulta o multiplicador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('possui multiplicador', () => pm.expect(Number(pm.response.json().multiplier)).to.not.be.NaN);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/bets/{{bet1_id}}", "host": ["{{base_url}}"], "path": ["bets", "{{bet1_id}}"] },
+            "description": "GAP: a API não tem uma ação para o usuário 'multiplicar' manualmente a aposta. O multiplicador é calculado automaticamente pelo backend no momento do POST /bets (HU2). Este request só evidencia o valor já atribuído."
+          }
+        },
+        {
+          "name": "HU9 - Usuário1 vê saldo de pontos",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('saldo debitado da aposta', () => pm.expect(pm.response.json().points).to.eql(40));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] },
+            "description": "Saldo inicial padrão é 100; após apostar 60 pontos, espera-se 40."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Usuário2: repete cadastro e aposta (HU1, HU2, HU3, HU9)",
+      "item": [
+        {
+          "name": "HU1 - Cadastrar Usuário2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('user2_login', 'usuario2_' + Date.now());"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "const body = pm.response.json();",
+                "pm.collectionVariables.set('user2_id', body.id);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Dois Teste\",\n  \"email\": \"{{user2_login}}@example.com\",\n  \"birthDate\": \"1998-03-10\",\n  \"login\": \"{{user2_login}}\",\n  \"cpf\": \"2{{$timestamp}}\",\n  \"password\": \"Senha@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/users/", "host": ["{{base_url}}"], "path": ["users", ""] }
+          }
+        },
+        {
+          "name": "Login Usuário2",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.collectionVariables.set('token_user2', body.access_token);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{user2_login}}\",\n  \"password\": \"Senha@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "description": "Passo inferido, necessário para autenticar antes de apostar."
+          }
+        },
+        {
+          "name": "HU2 - Usuário2 registra uma aposta",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 201', () => pm.response.to.have.status(201));",
+                "pm.collectionVariables.set('bet2_id', pm.response.json().id);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_user2}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"points\": 80,\n  \"prediction\": \"AWAY_TEAM\",\n  \"game_id\": {{game_id}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/bets/", "host": ["{{base_url}}"], "path": ["bets", ""] },
+            "description": "Usuário2 aposta no resultado oposto ao de Usuário1 (AWAY_TEAM) para exercitar o caso de aposta perdedora na apuração."
+          }
+        },
+        {
+          "name": "HU3 - Usuário2 vê o status da aposta",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user2}}" } ],
+            "url": { "raw": "{{base_url}}/bets/{{bet2_id}}", "host": ["{{base_url}}"], "path": ["bets", "{{bet2_id}}"] }
+          }
+        },
+        {
+          "name": "HU9 - Usuário2 vê saldo de pontos",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('saldo debitado da aposta', () => pm.expect(pm.response.json().points).to.eql(20));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user2}}" } ],
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Administrador: listagem, consulta e encerramento da partida",
+      "item": [
+        {
+          "name": "HA1 - Administrador lista todos os usuários",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('retorna lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_admin}}" } ],
+            "url": { "raw": "{{base_url}}/users/?limit=100", "host": ["{{base_url}}"], "path": ["users", ""], "query": [ { "key": "limit", "value": "100" } ] },
+            "description": "ACHADO: o endpoint GET /users hoje exige apenas usuário autenticado (get_current_user), não especificamente admin (get_current_admin_user). Qualquer usuário logado consegue listar todos os usuários do sistema — vale confirmar se é intencional."
+          }
+        },
+        {
+          "name": "HA3 - Administrador pesquisa dados da partida",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('possui as duas apostas', () => pm.expect(pm.response.json().bets.length).to.be.at.least(2));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_admin}}" } ],
+            "url": { "raw": "{{base_url}}/games/{{game_id}}", "host": ["{{base_url}}"], "path": ["games", "{{game_id}}"] }
+          }
+        },
+        {
+          "name": "Administrador encerra a partida",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('status FINISHED', () => pm.expect(pm.response.json().status).to.eql('FINISHED'));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"FINISHED\",\n  \"home_team_goals\": 2,\n  \"away_team_goals\": 0,\n  \"winner_id\": {{team_home_id}},\n  \"winner_str\": \"HOME_TEAM\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/games/{{game_id}}", "host": ["{{base_url}}"], "path": ["games", "{{game_id}}"] },
+            "description": "Time mandante vence (HOME_TEAM). Isso deve creditar os pontos da aposta vencedora de Usuário1 e não creditar nada para a aposta perdedora de Usuário2 (GameService.finalize_game)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 - Usuário1: pós-encerramento",
+      "item": [
+        {
+          "name": "HU9 - Usuário1 vê saldo de pontos (após apuração)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('saldo aumentou com o prêmio', () => pm.expect(pm.response.json().points).to.be.above(40));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] },
+            "description": "Usuário1 apostou no resultado correto (HOME_TEAM); saldo deve ter subido acima dos 40 pontos que restaram após a aposta (60 x multiplicador)."
+          }
+        },
+        {
+          "name": "H10 - Usuário1 vê ranking de apostadores por saldo de pontos",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.test('retorna lista', () => pm.expect(body).to.be.an('array'));",
+                "pm.test('itens só com os campos do ranking', () => {",
+                "  if (body.length > 0) {",
+                "    pm.expect(body[0]).to.have.all.keys('name', 'points', 'max_points', 'right_calls');",
+                "  }",
+                "});",
+                "pm.test('ordenado do maior para o menor saldo', () => {",
+                "  for (let i = 1; i < body.length; i++) {",
+                "    pm.expect(body[i - 1].points).to.be.at.least(body[i].points);",
+                "  }",
+                "});"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/users/ranking/points?limit=100", "host": ["{{base_url}}"], "path": ["users", "ranking", "points"], "query": [ { "key": "limit", "value": "100" } ] },
+            "description": "Ranking dos apostadores ordenado por saldo de pontos (descendente). Retorna apenas name, points, max_points e right_calls (schema UserRanking)."
+          }
+        },
+        {
+          "name": "H10 - Usuário1 vê ranking de apostadores por acertos",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.test('retorna lista', () => pm.expect(body).to.be.an('array'));",
+                "pm.test('ordenado do maior para o menor número de acertos', () => {",
+                "  for (let i = 1; i < body.length; i++) {",
+                "    pm.expect(body[i - 1].right_calls).to.be.at.least(body[i].right_calls);",
+                "  }",
+                "});"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user1}}" } ],
+            "url": { "raw": "{{base_url}}/users/ranking/right-calls?limit=100", "host": ["{{base_url}}"], "path": ["users", "ranking", "right-calls"], "query": [ { "key": "limit", "value": "100" } ] },
+            "description": "Ranking dos apostadores ordenado por número de acertos (right_calls, descendente). Usuário1 já ganhou uma aposta neste fluxo, então deve aparecer com right_calls >= 1."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 - Usuário2: pós-encerramento e cancelamento",
+      "item": [
+        {
+          "name": "Usuário2 vê saldo de pontos (após apuração)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('saldo não recebeu prêmio', () => pm.expect(pm.response.json().points).to.eql(20));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user2}}" } ],
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] },
+            "description": "Usuário2 apostou no resultado errado (AWAY_TEAM); saldo permanece nos 20 pontos, sem crédito de prêmio."
+          }
+        },
+        {
+          "name": "Usuário2 vê ranking de apostadores por saldo de pontos",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user2}}" } ],
+            "url": { "raw": "{{base_url}}/users/ranking/points?limit=100", "host": ["{{base_url}}"], "path": ["users", "ranking", "points"], "query": [ { "key": "limit", "value": "100" } ] }
+          }
+        },
+        {
+          "name": "Usuário2 vê ranking de apostadores por acertos",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user2}}" } ],
+            "url": { "raw": "{{base_url}}/users/ranking/right-calls?limit=100", "host": ["{{base_url}}"], "path": ["users", "ranking", "right-calls"], "query": [ { "key": "limit", "value": "100" } ] }
+          }
+        },
+        {
+          "name": "Usuário2 tenta cancelar a própria aposta (esperado: 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 403 - sem permissão', () => pm.response.to.have.status(403));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_user2}}" } ],
+            "url": { "raw": "{{base_url}}/bets/{{bet2_id}}", "host": ["{{base_url}}"], "path": ["bets", "{{bet2_id}}"] },
+            "description": "GAP: DELETE /bets/{id} hoje só é permitido para admin (get_current_admin_user). Um usuário comum não consegue cancelar/excluir a própria aposta via API. Este request evidencia o 403; o cancelamento efetivo é feito pelo admin no próximo request."
+          }
+        },
+        {
+          "name": "Administrador cancela a aposta de Usuário2",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_admin}}" } ],
+            "url": { "raw": "{{base_url}}/bets/{{bet2_id}}", "host": ["{{base_url}}"], "path": ["bets", "{{bet2_id}}"] },
+            "description": "Como não existe autocancelamento, é o admin quem efetivamente cancela a aposta em nome de Usuário2 para dar continuidade ao fluxo de teste."
+          }
+        }
+      ]
+    },
+    {
+      "name": "8 - Administrador: consulta final e Usuário2 sem acesso",
+      "item": [
+        {
+          "name": "HA3 - Administrador pesquisa dados do Usuário2",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_admin}}" } ],
+            "url": { "raw": "{{base_url}}/users/{{user2_id}}", "host": ["{{base_url}}"], "path": ["users", "{{user2_id}}"] }
+          }
+        },
+        {
+          "name": "Administrador desativa a conta de Usuário2",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 200', () => pm.response.to.have.status(200));",
+                "pm.test('isActive false', () => pm.expect(pm.response.json().isActive).to.eql(false));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token_admin}}" } ],
+            "url": { "raw": "{{base_url}}/users/{{user2_id}}/deactivate", "host": ["{{base_url}}"], "path": ["users", "{{user2_id}}", "deactivate"] },
+            "description": "Endpoint admin-only que marca isActive=false, sem excluir a conta."
+          }
+        },
+        {
+          "name": "Usuário2 tenta logar no sistema e não consegue",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('status 403 - conta desativada', () => pm.response.to.have.status(403));"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{user2_login}}\",\n  \"password\": \"Senha@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "description": "Conta desativada no passo anterior; login deve falhar com 403 'Esta conta está desativada'."
+          }
+        }
+      ]
+    }
+  ]
+}

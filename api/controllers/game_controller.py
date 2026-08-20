@@ -19,7 +19,7 @@ def criar_game(game: schema.GameCreate, db: Session = Depends(get_db), current_u
 
 # Listagem é pública (tela de jogos)
 @router.get("/", response_model=list[schema.GameResponse])
-def listar_games(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def listar_games(skip: int = 0, limit: int = 400, db: Session = Depends(get_db)):
     return game_repository.findAll(db=db, skip=skip, limit=limit)
 
 @router.get("/{game_id}", response_model=schema.GameResponse, status_code=status.HTTP_200_OK)
